@@ -1,0 +1,653 @@
+/* 基本スクロールバー設定 */
+
+        ::-webkit-scrollbar { width: 8px; }
+
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+
+
+        /* 印刷用スタイル */
+
+        @media print {
+
+            /* 背景色やグラフィックを強制的に印刷する */
+
+            * {
+
+                -webkit-print-color-adjust: exact !important;
+
+                print-color-adjust: exact !important;
+
+            }
+
+            @page {
+
+                size: A4;
+
+                margin: 0;
+
+            }
+
+            body {
+
+                background: white;
+
+                margin: 0;
+
+                padding: 0;
+
+                overflow: visible !important;
+
+                display: block !important;
+
+            }
+
+            /* 印刷時に不要なUIを隠す */
+
+            .no-print {
+
+                display: none !important;
+
+            }
+
+            
+
+            /* 位置図・台帳の重なり防止＆縦積み設定 */
+
+            .app-container, .sidebar, .main-content {
+
+                display: block !important;
+
+                position: static !important;
+
+                height: auto !important;
+
+                min-height: 0 !important;
+
+                overflow: visible !important;
+
+                width: 100% !important;
+
+                padding: 0 !important;
+
+                margin: 0 !important;
+
+                border: none !important;
+
+                z-index: auto !important;
+
+                background: white !important;
+
+            }
+
+
+
+            /* 位置図のA4ページ設定（1ページ目） */
+
+            .map-page-container {
+
+                width: 210mm !important;
+
+                height: 296mm !important;
+
+                padding: 15mm 25mm !important;
+
+                margin: 0 auto !important;
+
+                box-sizing: border-box !important;
+
+                display: flex !important;
+
+                flex-direction: column !important;
+
+                background: white !important;
+
+                /* 改ページを強制 */
+
+                page-break-after: always !important;
+
+                break-after: page !important;
+
+                page-break-inside: avoid !important;
+
+                break-inside: avoid !important;
+
+            }
+
+
+
+            /* 位置図のヘッダーとフッターを表示 */
+
+            .print-map-header, .print-map-footer {
+
+                display: block !important;
+
+            }
+
+
+
+            /* 地図本体の枠とレイアウト調整 */
+
+            #map-wrapper {
+
+                height: 220mm !important;
+
+                flex: none !important;
+
+                width: 100% !important;
+
+                border: 2px solid #334155 !important;
+
+                position: relative !important;
+
+                margin: 0 !important;
+
+                box-sizing: border-box !important;
+
+            }
+
+            .leaflet-control-zoom, .leaflet-control-attribution, .leaflet-control-layers {
+
+                display: none !important;
+
+            }
+
+
+
+            /* 台帳のA4ページ設定（2ページ目以降） */
+
+            #report-container {
+
+                display: block !important;
+
+                zoom: 1 !important;
+
+                margin: 0 !important;
+
+                padding: 0 !important;
+
+            }
+
+            .report-page {
+
+                width: 210mm !important;
+
+                height: 296mm !important;
+
+                margin: 0 !important;
+
+                padding: 12mm 20mm !important;
+
+                box-shadow: none !important;
+
+                border: none !important;
+
+                box-sizing: border-box !important;
+
+                display: flex !important;
+
+                flex-direction: column !important;
+
+                /* 改ページを強制 */
+
+                page-break-after: always !important;
+
+                break-after: page !important;
+
+                page-break-inside: avoid !important;
+
+                break-inside: avoid !important;
+
+            }
+
+            .report-page:last-child {
+
+                page-break-after: auto !important;
+
+                break-after: auto !important;
+
+            }
+
+
+
+            /* 選択枠の印刷時リセット */
+
+            .photo-frame {
+
+                border-color: transparent !important;
+
+                background-color: transparent !important;
+
+            }
+
+
+
+            /* 入力フォームを印刷用にスタイル変更（枠線を消すなど） */
+
+            input, textarea {
+
+                border: none !important;
+
+                background: transparent !important;
+
+                box-shadow: none !important;
+
+                resize: none !important;
+
+                color: black !important;
+
+            }
+
+            input::placeholder, textarea::placeholder {
+
+                color: transparent !important;
+
+            }
+
+        }
+
+
+
+        /* 画面表示用のスタイル */
+
+        @media screen {
+
+            .no-screen {
+
+                display: none !important;
+
+            }
+
+            .map-page-container {
+
+                display: flex;
+
+                flex-direction: column;
+
+                flex: 1;
+
+                width: 100%;
+
+                height: 100%;
+
+            }
+
+            .report-page {
+
+                width: 210mm;
+
+                height: 297mm;
+
+                background: white;
+
+                margin: 0 auto 2rem auto;
+
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+                padding: 12mm 20mm;
+
+                box-sizing: border-box;
+
+                display: flex;
+
+                flex-direction: column;
+
+            }
+
+        }
+
+
+
+        /* アプリ内印刷プレビューモード用スタイル */
+
+        body.print-preview-mode {
+
+            overflow: auto !important;
+
+        }
+
+        
+
+        body.print-preview-mode .app-container,
+
+        body.print-preview-mode .sidebar,
+
+        body.print-preview-mode .main-content {
+
+            display: block !important;
+
+            position: static !important;
+
+            height: auto !important;
+
+            min-height: 0 !important;
+
+            overflow: visible !important;
+
+            width: 100% !important;
+
+            border: none !important;
+
+            box-shadow: none !important;
+
+            z-index: auto !important;
+
+            background: transparent !important;
+
+        }
+
+
+
+        body.print-preview-mode .app-container {
+
+            padding-top: 80px !important;
+
+            background: #cbd5e1 !important;
+
+            min-height: 100vh !important;
+
+        }
+
+
+
+        body.print-preview-mode .sidebar > div:not(.map-page-container) {
+
+            display: none !important;
+
+        }
+
+
+
+        body.print-preview-mode .main-content {
+
+            padding: 0 !important;
+
+        }
+
+
+
+        body.print-preview-mode .map-page-container {
+
+            width: 210mm !important;
+
+            height: 296mm !important;
+
+            padding: 15mm 25mm !important;
+
+            margin: 0 auto 2rem auto !important;
+
+            background: white !important;
+
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+
+            display: flex !important;
+
+            flex-direction: column !important;
+
+            flex: none !important;
+
+            position: relative !important;
+
+        }
+
+        
+
+        body.print-preview-mode .print-map-header, 
+
+        body.print-preview-mode .print-map-footer {
+
+            display: block !important;
+
+        }
+
+        body.print-preview-mode #map-wrapper {
+
+            height: 220mm !important;
+
+            flex: none !important;
+
+            border: 2px solid #334155 !important;
+
+        }
+
+        body.print-preview-mode .leaflet-control-container,
+
+        body.print-preview-mode #fit-map-btn {
+
+            display: none !important;
+
+        }
+
+        body.print-preview-mode #report-container {
+
+            zoom: 1 !important;
+
+        }
+
+        body.print-preview-mode .photo-frame {
+
+            border-color: transparent !important;
+
+            background-color: transparent !important;
+
+        }
+
+        body.print-preview-mode .photo-frame input[type="checkbox"],
+
+        body.print-preview-mode .photo-frame .custom-checkbox-label,
+
+        body.print-preview-mode .photo-image-wrapper .group-hover\:flex {
+
+            display: none !important;
+
+        }
+
+        body.print-preview-mode input, 
+
+        body.print-preview-mode textarea {
+
+            border: none !important;
+
+            background: transparent !important;
+
+            box-shadow: none !important;
+
+            resize: none !important;
+
+            color: black !important;
+
+        }
+
+        body.print-preview-mode input::placeholder, 
+
+        body.print-preview-mode textarea::placeholder {
+
+            color: transparent !important;
+
+        }
+
+
+
+        /* 選択用の枠スタイル */
+
+        .photo-frame {
+
+            border: 2px solid transparent;
+
+            padding: 4px;
+
+            margin-bottom: 0;
+
+            border-radius: 6px;
+
+            transition: all 0.2s;
+
+            min-height: 0;
+
+            display: flex;
+
+            flex-direction: column;
+
+            overflow: hidden;
+
+        }
+
+        .photo-frame.selected {
+
+            border-color: #3b82f6;
+
+            background-color: #eff6ff;
+
+        }
+
+
+
+        /* 台帳内のテーブル・要素スタイル */
+
+        .photo-table {
+
+            width: 100%;
+
+            height: 100%;
+
+            border-collapse: collapse;
+
+            page-break-inside: avoid;
+
+            background-color: white;
+
+            table-layout: fixed;
+
+        }
+
+        .photo-table th, .photo-table td {
+
+            border: 1px solid #475569;
+
+            padding: 4px;
+
+        }
+
+        .photo-table th {
+
+            background-color: #f8fafc;
+
+            width: 72px;
+
+            text-align: center;
+
+            font-size: 0.8rem;
+
+        }
+
+        .photo-table tr { height: 1px; }
+
+        .photo-table tr:last-child { height: auto; }
+
+        
+
+        .photo-image-cell {
+
+            width: 62%;
+
+            padding: 2px !important; 
+
+            vertical-align: middle; 
+
+            position: relative;
+
+        }
+
+        .photo-image-wrapper {
+
+            position: absolute;
+
+            inset: 2px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background-color: transparent; 
+
+            overflow: hidden;
+
+        }
+
+        .photo-image-wrapper img {
+
+            width: 100%;
+
+            height: 100%;
+
+            object-fit: contain; 
+
+        }
+
+
+
+        /* ドラッグ＆ドロップエリアのアニメーション */
+
+        .drag-over {
+
+            background-color: #eff6ff !important;
+
+            border-color: #3b82f6 !important;
+
+            border-style: solid !important;
+
+        }
+
+        
+
+        /* ローディングオーバーレイ */
+
+        #loading-overlay { display: none; }
+
+        #loading-overlay.active { display: flex; }
+
+
+
+        /* 選択チェックボックスのカスタムデザイン */
+
+        .custom-checkbox-label {
+
+            border: 2px solid #94a3b8;
+
+            background-color: white;
+
+            transition: all 0.2s;
+
+        }
+
+        .custom-checkbox-label:hover { background-color: #f1f5f9; }
+
+        .custom-checkbox-label:has(input:checked) {
+
+            background-color: #eff6ff;
+
+            border-color: #2563eb;
+
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+
+        }
+
+        .custom-checkbox-label:has(input:checked) span { color: #1d4ed8; }
+
+
+
+        /* 画像書き込み用キャンバス */
+
+        #markup-canvas-container {
+
+            cursor: crosshair;
+
+            touch-action: none; /* スマホでのスクロール防止 */
+
+        }
