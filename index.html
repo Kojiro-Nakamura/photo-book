@@ -1,780 +1,391 @@
-﻿<!DOCTYPE html>
-
+<!DOCTYPE html>
 <html lang="ja" translate="no">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <meta name="google" content="notranslate">
-
-    <title>迴ｾ蝣ｴ蜀咏悄 Exif騾｣謳ｺ繝ｻ菴咲ｽｮ蝗ｳ・・床蟶ｳ閾ｪ蜍慕函謌舌い繝励Μ</title>
-
+    <title>現場写真 Exif連携・位置図＆台帳自動生成アプリ</title>
     
-
     <!-- Tailwind CSS -->
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     
-
-    <!-- Leaflet (蝨ｰ蝗ｳ繝ｩ繧､繝悶Λ繝ｪ) -->
-
+    <!-- Leaflet (地図ライブラリ) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     
-
-    <!-- Exif.js (蜀咏悄縺ｮ繝｡繧ｿ繝・・繧ｿ隱ｭ縺ｿ蜿悶ｊ) -->
-
+    <!-- Exif.js (写真のメタデータ読み取り) -->
     <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
 
-
-
-    <!-- heic2any (HEIC蠖｢蠑上・逕ｻ蜒上ｒJPEG縺ｫ螟画鋤) -->
-
+    <!-- heic2any (HEIC形式の画像をJPEGに変換) -->
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 
-
-
-    <!-- localForage (繝悶Λ繧ｦ繧ｶ縺ｮ螟ｧ螳ｹ驥上ョ繝ｼ繧ｿ繝吶・繧ｹ IndexedDB 繧堤ｰ｡蜊倥↓謇ｱ縺・◆繧√・繝ｩ繧､繝悶Λ繝ｪ) -->
-
+    <!-- localForage (ブラウザの大容量データベース IndexedDB を簡単に扱うためのライブラリ) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 
-
-
     <!-- Lucide Icons -->
-
     <script src="https://unpkg.com/lucide@latest"></script>
 
-
-
     <link rel="stylesheet" href="/src/css/style.css">
-
 </head>
-
 <body class="bg-gray-100 text-gray-800 font-sans overflow-hidden">
 
-
-
-    <!-- 蜊ｰ蛻ｷ繝励Ξ繝薙Η繝ｼ繝｢繝ｼ繝臥畑繝倥ャ繝繝ｼ繝舌・ -->
-
+    <!-- 印刷プレビューモード用ヘッダーバー -->
     <div id="print-preview-bar" class="fixed top-0 left-0 w-full bg-slate-800 text-white p-3 flex justify-between items-center z-[5000] hidden no-print shadow-lg">
-
         <div class="flex items-center gap-3 ml-4">
-
             <i data-lucide="printer" class="w-6 h-6 text-blue-400"></i>
-
             <div>
-
-                <div class="font-bold text-lg">蜊ｰ蛻ｷ繝励Ξ繝薙Η繝ｼ繝｢繝ｼ繝・/div>
-
-                <div class="text-xs text-gray-300 mt-0.5">窶ｻ繝懊ち繝ｳ縺悟渚蠢懊＠縺ｪ縺・ｴ蜷医・縲√く繝ｼ繝懊・繝峨・ <kbd class="bg-gray-700 px-1.5 py-0.5 rounded font-mono">Ctrl</kbd> + <kbd class="bg-gray-700 px-1.5 py-0.5 rounded font-mono">P</kbd> (Mac縺ｯ Cmd + P) 繧呈款縺励※蜊ｰ蛻ｷ縺励※縺上□縺輔＞縲・/div>
-
+                <div class="font-bold text-lg">印刷プレビューモード</div>
+                <div class="text-xs text-gray-300 mt-0.5">※ボタンが反応しない場合は、キーボードの <kbd class="bg-gray-700 px-1.5 py-0.5 rounded font-mono">Ctrl</kbd> + <kbd class="bg-gray-700 px-1.5 py-0.5 rounded font-mono">P</kbd> (Macは Cmd + P) を押して印刷してください。</div>
             </div>
-
         </div>
-
         <div class="flex items-center gap-3 mr-4">
-
             <button onclick="window.print()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 rounded font-bold transition flex items-center shadow-md">
-
-                <i data-lucide="printer" class="w-4 h-4 mr-2"></i>縺薙・縺ｾ縺ｾ蜊ｰ蛻ｷ縺吶ｋ
-
+                <i data-lucide="printer" class="w-4 h-4 mr-2"></i>このまま印刷する
             </button>
-
             <button onclick="exitPrintPreview()" class="px-5 py-2 bg-gray-600 hover:bg-gray-500 rounded font-bold transition flex items-center shadow-md border border-gray-500">
-
-                <i data-lucide="x" class="w-4 h-4 mr-2"></i>邱ｨ髮・↓謌ｻ繧・
-
+                <i data-lucide="x" class="w-4 h-4 mr-2"></i>編集に戻る
             </button>
-
         </div>
-
     </div>
 
-
-
-    <!-- 蜈ｨ逕ｻ髱｢繝峨Ο繝・・繧ｪ繝ｼ繝舌・繝ｬ繧､ -->
-
+    <!-- 全画面ドロップオーバーレイ -->
     <div id="global-drop-overlay" class="fixed inset-0 bg-blue-600 bg-opacity-90 z-[100] hidden items-center justify-center border-8 border-blue-400 border-dashed transition-all duration-200 no-print">
-
         <div class="text-white text-center pointer-events-none">
-
             <i data-lucide="image-plus" class="w-32 h-32 mx-auto mb-6 animate-bounce"></i>
-
-            <h2 class="text-4xl font-bold mb-4">蜀咏悄繧偵ラ繝ｭ繝・・縺励※霑ｽ蜉</h2>
-
-            <p class="text-xl">逕ｻ髱｢縺ｮ縺ｩ縺薙↓繝峨Ο繝・・縺励※繧りｪｭ縺ｿ霎ｼ繧√∪縺・/p>
-
+            <h2 class="text-4xl font-bold mb-4">写真をドロップして追加</h2>
+            <p class="text-xl">画面のどこにドロップしても読み込めます</p>
         </div>
-
     </div>
 
-
-
-    <!-- 繧ｺ繝ｼ繝繧ｳ繝ｳ繝医Ο繝ｼ繝ｫ・亥承荳雁崋螳夲ｼ・-->
-
+    <!-- ズームコントロール（右上固定） -->
     <div id="zoom-controls" class="fixed top-6 right-8 z-50 no-print flex items-center gap-2 bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-gray-200 transition-all duration-300 opacity-0 pointer-events-none">
-
-        <button onclick="fitZoomToScreen(true)" class="text-gray-500 hover:text-blue-600 transition p-1 mr-2 border-r border-gray-300 pr-3" title="逕ｻ髱｢蟷・↓閾ｪ蜍輔ヵ繧｣繝・ヨ"><i data-lucide="monitor" class="w-4 h-4"></i></button>
-
+        <button onclick="fitZoomToScreen(true)" class="text-gray-500 hover:text-blue-600 transition p-1 mr-2 border-r border-gray-300 pr-3" title="画面幅に自動フィット"><i data-lucide="monitor" class="w-4 h-4"></i></button>
         <i data-lucide="search" class="w-4 h-4 text-gray-500 mr-1"></i>
-
         <button onclick="changeZoom(-10)" class="text-gray-500 hover:text-blue-600 transition p-1"><i data-lucide="minus" class="w-4 h-4"></i></button>
-
         <input type="range" id="zoom-slider" min="30" max="150" value="100" step="10" class="w-24 accent-blue-600 cursor-pointer">
-
         <button onclick="changeZoom(10)" class="text-gray-500 hover:text-blue-600 transition p-1"><i data-lucide="plus" class="w-4 h-4"></i></button>
-
         <span id="zoom-value" class="text-sm font-bold text-gray-700 w-12 text-right">100%</span>
-
     </div>
 
-
-
-    <!-- 荳ｦ縺ｹ譖ｿ縺域桃菴懊・繧ｿ繝ｳ・亥承荳句崋螳夲ｼ・-->
-
+    <!-- 並べ替え操作ボタン（右下固定） -->
     <div id="sort-controls" class="fixed bottom-8 right-8 flex flex-col gap-3 z-50 no-print transition-all duration-300 opacity-0 translate-y-10 pointer-events-none">
-
         <div class="bg-white rounded-lg shadow-2xl border border-blue-200 p-3 flex flex-col items-center">
-
-            <span class="text-xs font-bold text-blue-800 mb-2 whitespace-nowrap">驕ｸ謚槭ｒ謫堺ｽ・/span>
-
-            <button onclick="moveSelectedUp()" class="bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition w-full flex justify-center mb-2 shadow-md" title="荳翫↓遘ｻ蜍・>
-
+            <span class="text-xs font-bold text-blue-800 mb-2 whitespace-nowrap">選択を操作</span>
+            <button onclick="moveSelectedUp()" class="bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition w-full flex justify-center mb-2 shadow-md" title="上に移動">
                 <i data-lucide="arrow-up" class="w-6 h-6"></i>
-
             </button>
-
-            <button onclick="moveSelectedDown()" class="bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition w-full flex justify-center mb-2 shadow-md" title="荳九↓遘ｻ蜍・>
-
+            <button onclick="moveSelectedDown()" class="bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition w-full flex justify-center mb-2 shadow-md" title="下に移動">
                 <i data-lucide="arrow-down" class="w-6 h-6"></i>
-
             </button>
-
-            <button onclick="confirmDeleteSelected()" class="bg-red-600 text-white p-3 rounded hover:bg-red-700 transition w-full flex justify-center mb-2 shadow-md" title="驕ｸ謚槭＠縺溷・逵溘ｒ蜑企勁">
-
+            <button onclick="confirmDeleteSelected()" class="bg-red-600 text-white p-3 rounded hover:bg-red-700 transition w-full flex justify-center mb-2 shadow-md" title="選択した写真を削除">
                 <i data-lucide="trash-2" class="w-6 h-6"></i>
-
             </button>
-
-            <button onclick="clearSelection()" class="bg-gray-100 text-gray-600 border border-gray-300 p-2 rounded hover:bg-gray-200 transition w-full flex justify-center text-xs font-bold shadow-sm" title="驕ｸ謚槭ｒ縺吶∋縺ｦ隗｣髯､">
-
-                驕ｸ謚櫁ｧ｣髯､
-
+            <button onclick="clearSelection()" class="bg-gray-100 text-gray-600 border border-gray-300 p-2 rounded hover:bg-gray-200 transition w-full flex justify-center text-xs font-bold shadow-sm" title="選択をすべて解除">
+                選択解除
             </button>
-
         </div>
-
     </div>
 
-
-
-    <!-- 繧｢繝励Μ蜈ｨ菴薙さ繝ｳ繝・リ -->
-
+    <!-- アプリ全体コンテナ -->
     <div class="app-container flex h-screen w-full">
-
         
-
-        <!-- 蟾ｦ蛛ｴ繧ｵ繧､繝峨ヰ繝ｼ・域桃菴懊ヱ繝阪Ν・・慍蝗ｳ・・-->
-
+        <!-- 左側サイドバー（操作パネル＆地図） -->
         <div class="sidebar w-1/3 min-w-[350px] bg-white border-r border-gray-300 flex flex-col h-full z-20 shadow-lg">
-
             
-
-            <!-- 繝倥ャ繝繝ｼ・・ｨｭ螳・(蜊ｰ蛻ｷ蟇ｾ雎｡螟・ -->
-
+            <!-- ヘッダー＆設定 (印刷対象外) -->
             <div class="no-print p-5 border-b border-gray-200 bg-slate-50">
-
                 <div class="flex items-center justify-between mb-4">
-
                     <h1 class="text-xl font-bold text-slate-800 flex items-center">
-
-                        <i data-lucide="map-pin" class="mr-2 text-blue-600"></i>菴咲ｽｮ蝗ｳ・・床蟶ｳ菴懈・
-
+                        <i data-lucide="map-pin" class="mr-2 text-blue-600"></i>位置図＆台帳作成
                     </h1>
-
                     <div class="flex gap-1">
-
-                        <button id="btn-undo" onclick="undo()" disabled class="p-1.5 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm" title="蜈・↓謌ｻ縺・(Ctrl+Z)">
-
+                        <button id="btn-undo" onclick="undo()" disabled class="p-1.5 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm" title="元に戻す (Ctrl+Z)">
                             <i data-lucide="undo" class="w-4 h-4"></i>
-
                         </button>
-
-                        <button id="btn-redo" onclick="redo()" disabled class="p-1.5 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm" title="繧・ｊ逶ｴ縺・(Ctrl+Y)">
-
+                        <button id="btn-redo" onclick="redo()" disabled class="p-1.5 rounded bg-white border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-sm" title="やり直す (Ctrl+Y)">
                             <i data-lucide="redo" class="w-4 h-4"></i>
-
                         </button>
-
                     </div>
-
                 </div>
-
                 
-
                 <div class="space-y-3">
-
                     <div>
-
-                        <label class="block text-sm font-medium text-gray-700 mb-1">蜷咲ｧｰ・亥ｷ･莠句錐繝ｻ莉ｶ蜷阪↑縺ｩ・・/label>
-
-                        <input type="text" id="project-name" placeholder="萓具ｼ壻ｻ､蜥後・ｹｴ蠎ｦ 縲・・紛蛯吝ｷ･莠・ class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-
+                        <label class="block text-sm font-medium text-gray-700 mb-1">名称（工事名・件名など）</label>
+                        <input type="text" id="project-name" placeholder="例：令和〇年度 〇〇整備工事" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
-
                     <div class="flex gap-2">
-
                         <button onclick="document.getElementById('file-input').click()" class="flex-1 bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 py-2 rounded text-sm font-medium transition flex justify-center items-center px-1">
-
-                            <i data-lucide="image-plus" class="w-4 h-4 mr-1"></i>霑ｽ蜉
-
+                            <i data-lucide="image-plus" class="w-4 h-4 mr-1"></i>追加
                         </button>
-
                         <button onclick="clearAllData()" class="flex-1 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 py-2 rounded text-sm font-medium transition flex justify-center items-center px-1">
-
-                            <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i>繧ｯ繝ｪ繧｢
-
+                            <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i>クリア
                         </button>
-
                         <button onclick="triggerPrint()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded text-sm font-medium transition flex justify-center items-center shadow-sm px-1">
-
-                            <i data-lucide="printer" class="w-4 h-4 mr-1"></i>蜊ｰ蛻ｷ
-
+                            <i data-lucide="printer" class="w-4 h-4 mr-1"></i>印刷
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
 
-
-
-            <!-- 繝峨Ο繝・・繧ｨ繝ｪ繧｢ (蜊ｰ蛻ｷ蟇ｾ雎｡螟・ -->
-
+            <!-- ドロップエリア (印刷対象外) -->
             <div class="no-print p-4">
-
                 <div id="drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-gray-50 transition bg-white min-h-[120px]">
-
                     <i data-lucide="upload-cloud" class="w-8 h-8 text-gray-400 mb-2"></i>
-
-                    <p class="text-sm font-medium text-gray-600">縺薙％縺ｫ蜀咏悄繧偵ラ繝ｭ繝・・</p>
-
-                    <p class="text-xs text-gray-400 mt-1">JPEG / PNG / HEIC 蠖｢蠑上・隍・焚驕ｸ謚槫庄</p>
-
+                    <p class="text-sm font-medium text-gray-600">ここに写真をドロップ</p>
+                    <p class="text-xs text-gray-400 mt-1">JPEG / PNG / HEIC 形式・複数選択可</p>
                     <input type="file" id="file-input" multiple accept="image/jpeg, image/jpg, image/png, image/heic, image/heif" class="hidden">
-
                 </div>
-
             </div>
 
-
-
-            <!-- 蜃ｦ逅・憾豕∬｡ｨ遉ｺ -->
-
+            <!-- 処理状況表示 -->
             <div id="status-message" class="no-print px-4 pb-2 text-xs text-blue-600 font-medium hidden">
-
-                蜀咏悄繧貞・逅・ｸｭ...
-
+                写真を処理中...
             </div>
 
-
-
-            <!-- 菴咲ｽｮ蝗ｳ繧ｨ繝ｪ繧｢ (逕ｻ髱｢縺ｧ縺ｯ繧ｵ繧､繝峨ヰ繝ｼ縺ｮ荳矩Κ縲∝魂蛻ｷ譎ゅ・1繝壹・繧ｸ逶ｮ) -->
-
+            <!-- 位置図エリア (画面ではサイドバーの下部、印刷時は1ページ目) -->
             <div class="map-page-container border-t border-gray-300">
-
-                <!-- 蜊ｰ蛻ｷ逕ｨ繝倥ャ繝繝ｼ (逕ｻ髱｢荳翫・髱櫁｡ｨ遉ｺ) -->
-
+                <!-- 印刷用ヘッダー (画面上は非表示) -->
                 <div class="print-map-header no-screen mb-4">
-
-                    <div class="text-2xl font-bold tracking-widest text-center border-b-2 border-gray-800 pb-2 mb-6">謦ｮ蠖ｱ菴咲ｽｮ蝗ｳ</div>
-
-                    <div class="text-right text-sm font-medium"><span id="map-print-project-label">蟾･莠句錐・・/span><span class="border-b border-gray-400 px-4 project-name-display">蟾･莠句錐譛ｪ蜈･蜉・/span></div>
-
+                    <div class="text-2xl font-bold tracking-widest text-center border-b-2 border-gray-800 pb-2 mb-6">撮影位置図</div>
+                    <div class="text-right text-sm font-medium"><span id="map-print-project-label">工事名：</span><span class="border-b border-gray-400 px-4 project-name-display">工事名未入力</span></div>
                 </div>
 
-
-
-                <!-- 蝨ｰ蝗ｳ譛ｬ菴・-->
-
+                <!-- 地図本体 -->
                 <div id="map-wrapper" class="flex-1 w-full bg-gray-200 relative">
-
                     <div id="map" class="w-full h-full absolute inset-0 z-10"></div>
-
                     
-
-                    <button onclick="fitMapToBounds()" class="absolute top-[80px] left-[10px] z-[1000] bg-white w-[34px] h-[34px] flex items-center justify-center rounded-[2px] shadow-[0_1px_5px_rgba(0,0,0,0.65)] text-gray-700 hover:bg-[#f4f4f4] transition no-print" title="縺吶∋縺ｦ縺ｮ蜀咏悄縺悟庶縺ｾ繧九ｈ縺・↓蜈ｨ菴楢｡ｨ遉ｺ" id="fit-map-btn" style="display: none;">
-
+                    <button onclick="fitMapToBounds()" class="absolute top-[80px] left-[10px] z-[1000] bg-white w-[34px] h-[34px] flex items-center justify-center rounded-[2px] shadow-[0_1px_5px_rgba(0,0,0,0.65)] text-gray-700 hover:bg-[#f4f4f4] transition no-print" title="すべての写真が収まるように全体表示" id="fit-map-btn" style="display: none;">
                         <i data-lucide="maximize" class="w-[18px] h-[18px]"></i>
-
                     </button>
-
-
 
                     <div id="no-location-warning" class="absolute top-3 left-1/2 transform -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur border-2 border-red-500 text-red-600 px-3 py-2 rounded-lg shadow-lg text-sm font-bold hidden items-center gap-1.5 w-max max-w-[90%]">
-
                         <i data-lucide="map-pin-off" class="w-4 h-4 shrink-0"></i>
-
-                        <span class="truncate">菴咲ｽｮ諠・ｱ縺ｪ縺・ 蜀咏悄 <span id="no-location-list"></span></span>
-
+                        <span class="truncate">位置情報なし: 写真 <span id="no-location-list"></span></span>
                     </div>
-
                 </div>
 
-
-
-                <!-- 蜊ｰ蛻ｷ逕ｨ繝輔ャ繧ｿ繝ｼ / 蜃｡萓・(逕ｻ髱｢荳翫・髱櫁｡ｨ遉ｺ) -->
-
+                <!-- 印刷用フッター / 凡例 (画面上は非表示) -->
                 <div class="print-map-footer no-screen mt-4 border border-gray-400 p-2 bg-gray-50 flex items-center justify-start gap-6">
-
-                    <span class="font-bold text-sm">縲仙・萓九・/span>
-
+                    <span class="font-bold text-sm">【凡例】</span>
                     <div class="flex items-center text-sm">
-
                         <div class="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2 border border-white font-bold">1</div>
-
-                        謦ｮ蠖ｱ菴咲ｽｮ繝ｻ蜀咏悄逡ｪ蜿ｷ
-
+                        撮影位置・写真番号
                     </div>
-
                     <div class="flex items-center text-sm" id="legend-direction">
-
                         <svg class="mr-1 filter drop-shadow-sm" width="12" height="16" viewBox="0 0 24 32">
-
                             <path d="M12 0 L24 14 L16 14 L16 32 L8 32 L8 14 L0 14 Z" fill="#ef4444" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
-
                         </svg>
-
-                        謦ｮ蠖ｱ譁ｹ蜷・
-
+                        撮影方向
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
-
-
-        <!-- 蜿ｳ蛛ｴ繝｡繧､繝ｳ繧ｳ繝ｳ繝・Φ繝・ｼ亥床蟶ｳ繝励Ξ繝薙Η繝ｼ繧ｨ繝ｪ繧｢・・-->
-
+        <!-- 右側メインコンテンツ（台帳プレビューエリア） -->
         <div class="main-content flex-1 overflow-y-auto bg-slate-200 p-8">
-
             <div id="empty-state" class="no-print flex flex-col items-center justify-center h-full text-gray-500">
-
                 <i data-lucide="file-spreadsheet" class="w-16 h-16 text-gray-300 mb-4"></i>
-
-                <p class="text-lg font-medium">蜀咏悄繧定ｪｭ縺ｿ霎ｼ繧縺ｨ縺薙％縺ｫ蜿ｰ蟶ｳ縺檎函謌舌＆繧後∪縺・/p>
-
-                <p class="text-sm mt-2">逕ｻ髱｢蟾ｦ蛛ｴ縺ｮ繧ｨ繝ｪ繧｢縺ｫ蜀咏悄繧偵ラ繝ｩ繝・げ・・ラ繝ｭ繝・・縺励※縺上□縺輔＞</p>
-
+                <p class="text-lg font-medium">写真を読み込むとここに台帳が生成されます</p>
+                <p class="text-sm mt-2">画面左側のエリアに写真をドラッグ＆ドロップしてください</p>
             </div>
-
             
-
             <div id="report-container">
-
-                <!-- Javascript縺ｧ蜍慕噪縺ｫ逕滓・ -->
-
+                <!-- Javascriptで動的に生成 -->
             </div>
-
         </div>
-
     </div>
 
-
-
-    <!-- 繝ｭ繝ｼ繝・ぅ繝ｳ繧ｰ繧ｪ繝ｼ繝舌・繝ｬ繧､ -->
-
+    <!-- ローディングオーバーレイ -->
     <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-80 z-50 items-center justify-center flex-col">
-
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-
-        <p class="text-lg font-bold text-gray-700" id="loading-text">蜃ｦ逅・ｸｭ...</p>
-
+        <p class="text-lg font-bold text-gray-700" id="loading-text">処理中...</p>
     </div>
 
-
-
-    <!-- 蜷・ｨｮ繝｢繝ｼ繝繝ｫ -->
-
+    <!-- 各種モーダル -->
     <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden items-center justify-center no-print">
-
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-
-            <h3 class="text-lg font-bold text-gray-900 mb-4">縺吶∋縺ｦ縺ｮ繝・・繧ｿ繧偵け繝ｪ繧｢縺励∪縺吶°・・/h3>
-
-            <p class="text-sm text-gray-600 mb-6">隱ｭ縺ｿ霎ｼ繧薙□蜀咏悄縺ｨ蜈･蜉帙＠縺溘ユ繧ｭ繧ｹ繝医・縺吶∋縺ｦ蜑企勁縺輔ｌ縲∝・縺ｫ謌ｻ縺帙∪縺帙ｓ縲・/p>
-
+            <h3 class="text-lg font-bold text-gray-900 mb-4">すべてのデータをクリアしますか？</h3>
+            <p class="text-sm text-gray-600 mb-6">読み込んだ写真と入力したテキストはすべて削除され、元に戻せません。</p>
             <div class="flex justify-end gap-3">
-
-                <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
-
-                <button onclick="executeClearAll()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition">繧ｯ繝ｪ繧｢縺吶ｋ</button>
-
+                <button onclick="closeConfirmModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">キャンセル</button>
+                <button onclick="executeClearAll()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition">クリアする</button>
             </div>
-
         </div>
-
     </div>
-
-
 
     <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden items-center justify-center no-print">
-
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-
-            <h3 class="text-lg font-bold text-gray-900 mb-4">驕ｸ謚槭＠縺溷・逵溘ｒ蜑企勁縺励∪縺吶°・・/h3>
-
-            <p class="text-sm text-gray-600 mb-6">縺薙・謫堺ｽ懊・蜈・↓謌ｻ縺帙∪縺帙ｓ縲・/p>
-
+            <h3 class="text-lg font-bold text-gray-900 mb-4">選択した写真を削除しますか？</h3>
+            <p class="text-sm text-gray-600 mb-6">この操作は元に戻せません。</p>
             <div class="flex justify-end gap-3">
-
-                <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
-
-                <button onclick="executeDeleteSelected()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition">蜑企勁縺吶ｋ</button>
-
+                <button onclick="closeDeleteConfirmModal()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">キャンセル</button>
+                <button onclick="executeDeleteSelected()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-medium transition">削除する</button>
             </div>
-
         </div>
-
     </div>
-
-
 
     <div id="duplicate-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden items-center justify-center no-print">
-
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-
             <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-
-                <i data-lucide="copy" class="w-5 h-5 mr-2 text-blue-600"></i>驥崎､・・遒ｺ隱・
-
+                <i data-lucide="copy" class="w-5 h-5 mr-2 text-blue-600"></i>重複の確認
             </h3>
-
             <div id="duplicate-modal-message" class="text-sm text-gray-700 mb-6 whitespace-pre-wrap max-h-40 overflow-y-auto bg-gray-50 p-3 rounded border border-gray-200 leading-relaxed"></div>
-
             <div class="flex justify-end gap-3">
-
-                <button id="duplicate-btn-no" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">繧ｹ繧ｭ繝・・縺吶ｋ</button>
-
-                <button id="duplicate-btn-yes" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition shadow-sm">霑ｽ蜉縺吶ｋ</button>
-
+                <button id="duplicate-btn-no" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded font-medium transition">スキップする</button>
+                <button id="duplicate-btn-yes" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition shadow-sm">追加する</button>
             </div>
-
         </div>
-
     </div>
-
-
 
     <div id="alert-modal" class="fixed inset-0 bg-black bg-opacity-50 z-[200] hidden items-center justify-center no-print">
-
         <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-
             <h3 class="text-lg font-bold text-red-600 mb-4 flex items-center">
-
-                <i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>縺顔衍繧峨○
-
+                <i data-lucide="alert-triangle" class="w-5 h-5 mr-2"></i>お知らせ
             </h3>
-
             <div id="alert-modal-message" class="text-sm text-gray-700 mb-6 whitespace-pre-wrap max-h-60 overflow-y-auto bg-gray-50 p-3 rounded border border-gray-200 leading-relaxed"></div>
-
             <div class="flex justify-end">
-
-                <button onclick="closeAlertModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition shadow-sm">遒ｺ隱・/button>
-
+                <button onclick="closeAlertModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium transition shadow-sm">確認</button>
             </div>
-
         </div>
-
     </div>
 
-
-
-    <!-- 逕ｻ蜒剰ｪｿ謨ｴ繝｢繝ｼ繝繝ｫ -->
-
+    <!-- 画像調整モーダル -->
     <div id="adjust-modal" class="fixed inset-0 bg-black bg-opacity-70 z-[300] hidden items-center justify-center no-print backdrop-blur-sm">
-
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-3xl w-full mx-4 flex flex-col md:flex-row gap-6">
-
             <div class="flex-1 bg-gray-900 rounded-lg flex items-center justify-center overflow-hidden min-h-[300px] relative border border-gray-300 shadow-inner">
-
                 <div class="relative max-w-full max-h-[500px]">
-
                     <img id="adjust-preview-base" src="" class="block max-w-full max-h-[500px] object-contain transition-none">
-
                     <img id="adjust-preview-markup" src="" class="absolute inset-0 w-full h-full object-contain pointer-events-none hidden">
-
                 </div>
-
             </div>
-
             <div class="w-full md:w-72 flex flex-col gap-6">
-
                 <h3 class="text-lg font-bold text-gray-800 flex items-center border-b pb-3">
-
-                    <i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 text-blue-600"></i>逕ｻ蜒上・濶ｲ隱ｿ陬懈ｭ｣
-
+                    <i data-lucide="sliders-horizontal" class="w-5 h-5 mr-2 text-blue-600"></i>画像の色調補正
                 </h3>
-
                 <div class="space-y-6 flex-1">
-
                     <div>
-
                         <div class="flex justify-between mb-2">
-
-                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="sun" class="w-4 h-4 mr-1 text-gray-500"></i>譏弱ｋ縺・/label>
-
+                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="sun" class="w-4 h-4 mr-1 text-gray-500"></i>明るさ</label>
                             <span id="val-brightness" class="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200">100%</span>
-
                         </div>
-
                         <input type="range" id="slider-brightness" min="30" max="170" value="100" class="w-full accent-blue-600 cursor-pointer" oninput="updateAdjustPreview()">
-
                     </div>
-
                     <div>
-
                         <div class="flex justify-between mb-2">
-
-                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="contrast" class="w-4 h-4 mr-1 text-gray-500"></i>繧ｳ繝ｳ繝医Λ繧ｹ繝・/label>
-
+                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="contrast" class="w-4 h-4 mr-1 text-gray-500"></i>コントラスト</label>
                             <span id="val-contrast" class="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200">100%</span>
-
                         </div>
-
                         <input type="range" id="slider-contrast" min="30" max="170" value="100" class="w-full accent-blue-600 cursor-pointer" oninput="updateAdjustPreview()">
-
                     </div>
-
                     <div>
-
                         <div class="flex justify-between mb-2">
-
-                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="palette" class="w-4 h-4 mr-1 text-gray-500"></i>蠖ｩ蠎ｦ</label>
-
+                            <label class="text-sm font-bold text-gray-700 flex items-center"><i data-lucide="palette" class="w-4 h-4 mr-1 text-gray-500"></i>彩度</label>
                             <span id="val-saturate" class="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600 border border-gray-200">100%</span>
-
                         </div>
-
                         <input type="range" id="slider-saturate" min="0" max="200" value="100" class="w-full accent-blue-600 cursor-pointer" oninput="updateAdjustPreview()">
-
                     </div>
-
                 </div>
-
                 <div class="mt-auto pt-4 border-t flex flex-col gap-3">
-
                     <button onclick="resetAdjustments()" class="w-full py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded font-bold transition text-sm border border-gray-300 shadow-sm flex items-center justify-center">
-
-                        <i data-lucide="rotate-ccw" class="w-4 h-4 mr-1"></i>讓呎ｺ悶↓謌ｻ縺・
-
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 mr-1"></i>標準に戻す
                     </button>
-
                     <div class="flex gap-2">
-
-                        <button onclick="closeAdjustModal()" class="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition shadow-sm">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
-
+                        <button onclick="closeAdjustModal()" class="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition shadow-sm">キャンセル</button>
                         <button onclick="applyAdjustments()" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold transition shadow-sm flex items-center justify-center shadow-md">
-
-                            <i data-lucide="check" class="w-5 h-5 mr-1"></i>驕ｩ逕ｨ縺吶ｋ
-
+                            <i data-lucide="check" class="w-5 h-5 mr-1"></i>適用する
                         </button>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
-
-
-    <!-- 逕ｻ蜒上・繝ｼ繧ｯ繧｢繝・・逕ｨ繝｢繝ｼ繝繝ｫ -->
-
+    <!-- 画像マークアップ用モーダル -->
     <div id="markup-modal" class="fixed inset-0 bg-black bg-opacity-80 z-[400] hidden flex-col items-center justify-center no-print backdrop-blur-sm">
-
         <div class="bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden max-w-5xl w-full mx-4" style="height: 90vh;">
-
-            <!-- 繝倥ャ繝繝ｼ -->
-
+            <!-- ヘッダー -->
             <div class="px-4 py-3 bg-gray-100 border-b flex justify-between items-center shrink-0">
-
                 <h3 class="font-bold text-gray-800 flex items-center">
-
-                    <i data-lucide="pen-tool" class="w-5 h-5 mr-2 text-blue-600"></i>逕ｻ蜒上↓譖ｸ縺崎ｾｼ縺ｿ
-
+                    <i data-lucide="pen-tool" class="w-5 h-5 mr-2 text-blue-600"></i>画像に書き込み
                 </h3>
-
                 <div class="flex gap-2">
-
-                    <button onclick="undoMarkup()" class="p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600" title="蜈・↓謌ｻ縺・><i data-lucide="undo" class="w-4 h-4"></i></button>
-
-                    <button onclick="redoMarkup()" class="p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600" title="繧・ｊ逶ｴ縺・><i data-lucide="redo" class="w-4 h-4"></i></button>
-
+                    <button onclick="undoMarkup()" class="p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600" title="元に戻す"><i data-lucide="undo" class="w-4 h-4"></i></button>
+                    <button onclick="redoMarkup()" class="p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 text-gray-600" title="やり直す"><i data-lucide="redo" class="w-4 h-4"></i></button>
                     <div class="w-px bg-gray-300 mx-1"></div>
-
-                    <button onclick="clearMarkup()" class="px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-orange-50 text-orange-600 flex items-center text-sm font-bold transition shadow-sm" title="縺吶∋縺ｦ縺ｮ譖ｸ縺崎ｾｼ縺ｿ繧呈ｶ亥悉">
-
-                        <i data-lucide="eraser" class="w-4 h-4 mr-1"></i>繧ｯ繝ｪ繧｢
-
+                    <button onclick="clearMarkup()" class="px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-orange-50 text-orange-600 flex items-center text-sm font-bold transition shadow-sm" title="すべての書き込みを消去">
+                        <i data-lucide="eraser" class="w-4 h-4 mr-1"></i>クリア
                     </button>
-
                 </div>
-
             </div>
-
             
-
-            <!-- 繝・・繝ｫ繝舌・ -->
-
+            <!-- ツールバー -->
             <div class="px-4 py-2 bg-white border-b flex flex-wrap gap-4 items-center shrink-0">
-
                 <div class="flex bg-gray-100 p-1 rounded-lg gap-1 border border-gray-200">
-
-                    <button onclick="setMarkupTool('pen')" id="tool-pen" class="p-2 rounded-md transition markup-tool-btn bg-white shadow-sm ring-1 ring-gray-200" title="繝壹Φ (繝輔Μ繝ｼ繝上Φ繝・">
-
+                    <button onclick="setMarkupTool('pen')" id="tool-pen" class="p-2 rounded-md transition markup-tool-btn bg-white shadow-sm ring-1 ring-gray-200" title="ペン (フリーハンド)">
                         <i data-lucide="pen" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
-                    <button onclick="setMarkupTool('line')" id="tool-line" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="逶ｴ邱・>
-
+                    <button onclick="setMarkupTool('line')" id="tool-line" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="直線">
                         <i data-lucide="minus" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
-                    <button onclick="setMarkupTool('arrow')" id="tool-arrow" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="遏｢蜊ｰ">
-
+                    <button onclick="setMarkupTool('arrow')" id="tool-arrow" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="矢印">
                         <i data-lucide="move-up-right" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
-                    <button onclick="setMarkupTool('circle')" id="tool-circle" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="蜀・・讌募・">
-
+                    <button onclick="setMarkupTool('circle')" id="tool-circle" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="円・楕円">
                         <i data-lucide="circle" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
-                    <button onclick="setMarkupTool('rect')" id="tool-rect" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="蝗幄ｧ貞ｽ｢">
-
+                    <button onclick="setMarkupTool('rect')" id="tool-rect" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="四角形">
                         <i data-lucide="square" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
-                    <button onclick="setMarkupTool('text')" id="tool-text" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="繝・く繧ｹ繝亥・蜉・>
-
+                    <button onclick="setMarkupTool('text')" id="tool-text" class="p-2 rounded-md transition hover:bg-white markup-tool-btn" title="テキスト入力">
                         <i data-lucide="type" class="w-5 h-5 text-gray-700"></i>
-
                     </button>
-
                 </div>
-
-
 
                 <div class="flex items-center gap-2">
-
-                    <span class="text-xs font-bold text-gray-500">濶ｲ:</span>
-
+                    <span class="text-xs font-bold text-gray-500">色:</span>
                     <input type="color" id="markup-color" value="#ef4444" class="w-8 h-8 rounded cursor-pointer border border-gray-300">
-
                 </div>
-
                 
-
                 <div class="flex items-center gap-1">
-
-                    <span class="text-xs font-bold text-gray-500 mr-1">螟ｪ縺・</span>
-
-                    <button onclick="changeMarkupSize(-1)" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-200 rounded transition" title="邏ｰ縺・>
-
+                    <span class="text-xs font-bold text-gray-500 mr-1">太さ:</span>
+                    <button onclick="changeMarkupSize(-1)" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-200 rounded transition" title="細く">
                         <i data-lucide="minus" class="w-4 h-4"></i>
-
                     </button>
-
                     <input type="range" id="markup-size" min="2" max="10" value="5" class="w-24 accent-blue-600 cursor-pointer">
-
-                    <button onclick="changeMarkupSize(1)" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-200 rounded transition" title="螟ｪ縺・>
-
+                    <button onclick="changeMarkupSize(1)" class="p-1 text-gray-500 hover:text-blue-600 hover:bg-gray-200 rounded transition" title="太く">
                         <i data-lucide="plus" class="w-4 h-4"></i>
-
                     </button>
-
                 </div>
-
             </div>
-
             
-
-            <!-- 繧ｭ繝｣繝ｳ繝舌せ繧ｨ繝ｪ繧｢ -->
-
+            <!-- キャンバスエリア -->
             <div class="flex-1 bg-gray-900 overflow-auto flex items-center justify-center relative p-4" id="markup-scroll-area">
-
                 <div id="markup-canvas-container" class="relative shadow-xl">
-
-                    <!-- 閭梧勹逕ｻ蜒擾ｼ育ｴ皮ｲ九↑逕ｻ蜒擾ｼ玖牡陬懈ｭ｣・・-->
-
+                    <!-- 背景画像（純粋な画像＋色補正） -->
                     <img id="markup-bg-img" src="" class="block max-w-none pointer-events-none select-none">
-
-                    <!-- 譖ｸ縺崎ｾｼ縺ｿ繝ｬ繧､繝､繝ｼ・磯乗・・・-->
-
+                    <!-- 書き込みレイヤー（透明） -->
                     <canvas id="markup-canvas" class="block absolute top-0 left-0 max-w-none"></canvas>
-
                     <canvas id="markup-overlay-canvas" class="block absolute top-0 left-0 max-w-none"></canvas>
-
-                    <!-- 繝・く繧ｹ繝亥・蜉帷畑繝懊ャ繧ｯ繧ｹ -->
-
+                    <!-- テキスト入力用ボックス -->
                     <textarea id="markup-text-input" class="absolute hidden bg-transparent outline-none resize-none overflow-hidden" style="font-family: sans-serif; white-space: pre-wrap; word-wrap: break-word; color: #ef4444; text-shadow: -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 2px 2px 0 #fff; z-index: 10;"></textarea>
-
                 </div>
-
             </div>
-
             
-
-            <!-- 繝輔ャ繧ｿ繝ｼ -->
-
+            <!-- フッター -->
             <div class="px-4 py-3 bg-gray-100 border-t flex justify-end gap-3 shrink-0">
-
-                <button onclick="closeMarkupModal()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition shadow-sm">繧ｭ繝｣繝ｳ繧ｻ繝ｫ</button>
-
+                <button onclick="closeMarkupModal()" class="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition shadow-sm">キャンセル</button>
                 <button onclick="saveMarkup()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold transition shadow-sm flex items-center">
-
-                    <i data-lucide="check" class="w-5 h-5 mr-1"></i>螳御ｺ・・菫晏ｭ・
-
+                    <i data-lucide="check" class="w-5 h-5 mr-1"></i>完了・保存
                 </button>
-
             </div>
-
         </div>
-
     </div>
 
-
-
-    <!-- 繝医・繧ｹ繝磯夂衍 -->
-
+    <!-- トースト通知 -->
     <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-5 py-2 rounded-full shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-[1000] text-sm font-bold flex items-center gap-2">
-
         <i data-lucide="check-circle" class="w-4 h-4 text-green-400"></i>
-
-        <span id="toast-message">菫晏ｭ倥＠縺ｾ縺励◆</span>
-
+        <span id="toast-message">保存しました</span>
     </div>
-
-
 
     <script type="module" src="/src/js/main.js"></script>
 </body>

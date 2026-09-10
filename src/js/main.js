@@ -3158,8 +3158,6 @@ lucide.createIcons();
                 
 
             } catch (e) {
-
-            } catch (e) {
                 console.error("保存エラー", e);
                 showAlertModal("画像の保存に失敗しました。");
             }
