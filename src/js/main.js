@@ -3164,3 +3164,5 @@ lucide.createIcons();
             loadingOverlay.classList.remove('active');
             closeMarkupModal();
         };
+// Ensure triggerPrint is available globally for index.html inline event handler
+window.triggerPrint = triggerPrint;
